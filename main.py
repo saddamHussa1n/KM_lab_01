@@ -1,5 +1,10 @@
 import sys
 
+def write_to_file(file, string1):
+    f = open(file, mode='w')
+    f.write(string1)
+    f.close()
+
 
 def read_file(file):
     f = open(file, mode='r')
@@ -21,7 +26,7 @@ def get_alphabet(file):
         if ch != '\n':
             alphabet += ch
     if not alphabet:
-        alphabet = ''
+        alphabet += 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ '
     f.close()
     return alphabet
 
@@ -134,7 +139,7 @@ class Substitution:
     @staticmethod
     def encrypt(message, key):
         cipher_alph = Substitution.buildAlphabet(key)
-        return ''.join(cipher_alph[ALPHABET.index(ch.upper())] for ch in message)
+        return ''.join(cipher_alph[ALPHABET.index(ch)] for ch in message)
 
     # Built substitution alphabet by key
     @staticmethod
@@ -145,7 +150,7 @@ class Substitution:
     @staticmethod
     def decrypt(ciphertex, key):
         cipher_alph = Substitution.buildAlphabet(key)
-        return ''.join(ALPHABET[cipher_alph.index(ch.upper())] for ch in ciphertex)
+        return ''.join(ALPHABET[cipher_alph.index(ch)] for ch in ciphertex)
 
 
 class Affine:
@@ -179,7 +184,7 @@ class Affine:
 class ColumnarTransposition:
     @staticmethod
     def encrypt(message, key):
-        message = message + 'X' * ((0 - len(message) % len(key)) % len(key))
+        message = message + 'x' * ((0 - len(message) % len(key)) % len(key))
         res = ''.join([message[k] for i in ColumnarTransposition.transformkey(key) for k in range(len(message)) if
                        k % len(key) == i])
         return res
