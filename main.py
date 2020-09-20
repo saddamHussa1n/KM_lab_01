@@ -1,4 +1,8 @@
 import sys
+import traceback
+import numpy as np
+from egcd import egcd
+
 
 def write_to_file(file, string1):
     f = open(file, mode='w')
@@ -25,8 +29,14 @@ def get_alphabet(file):
     for ch in f.read():
         if ch != '\n':
             alphabet += ch
-    if not alphabet:
-        alphabet += 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ '
+    if alphabet:
+        y = []
+        for i in alphabet:
+            if i not in y:
+                y.append(i)
+        alphabet = (''.join(y))
+    else:
+        alphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ '
     f.close()
     return alphabet
 
@@ -78,6 +88,24 @@ def get_key_substitution(file):
     return key
 
 
+def get_key_hill(file):
+    f = open(file, mode='r')
+    key = ''
+    for ch in f.read():
+        if ch != '\n':
+            key += ch
+    if not key:
+        print("НЕТ КЛЮЧА В ФАЙЛЕ key.txt")
+        sys.exit()
+    if len(key) != 4:
+        print("НЕПРАВИЛЬНЫЙ КЛЮЧ")
+        sys.exit()
+    key1 = np.matrix(
+        [[ALPHABET.index(key[0]), ALPHABET.index(key[1])], [ALPHABET.index(key[2]), ALPHABET.index(key[3])]])
+    f.close()
+    return key1
+
+
 def get_key_columnar(file):
     f = open(file, mode='r')
     key = ''
@@ -107,7 +135,6 @@ def get_key_vigenere(file):
     return key
 
 
-# Build shifted alphabet
 def offset(char, offset):
     return ALPHABET[(ALPHABET.index(char) + offset) % len_of_alphabet]
 
@@ -141,7 +168,6 @@ class Substitution:
         cipher_alph = Substitution.buildAlphabet(key)
         return ''.join(cipher_alph[ALPHABET.index(ch)] for ch in message)
 
-    # Built substitution alphabet by key
     @staticmethod
     def buildAlphabet(key):
         offseted_alph = ''.join(map(offset, list(ALPHABET), [ALPHABET.index(key[-1]) + 1, ] * len(ALPHABET)))
@@ -164,12 +190,10 @@ class Affine:
             t.append(t[-2] - q * t[-1])
         return (s[-1] % r[1])
 
-    # key should be the tuple
     @staticmethod
     def encrypt(message, key):
         return ''.join(ALPHABET[(ALPHABET.index(ch) * key[0] + key[1]) % len_of_alphabet] for ch in message)
 
-    # key should be the tuple
     @staticmethod
     def decrypt(ciphertext, key):
         try:
@@ -184,7 +208,7 @@ class Affine:
 class ColumnarTransposition:
     @staticmethod
     def encrypt(message, key):
-        message = message + 'x' * ((0 - len(message) % len(key)) % len(key))
+        message = message + ' ' * ((0 - len(message) % len(key)) % len(key))
         res = ''.join([message[k] for i in ColumnarTransposition.transformkey(key) for k in range(len(message)) if
                        k % len(key) == i])
         return res
@@ -200,6 +224,70 @@ class ColumnarTransposition:
         return [i[0] for i in sorted([i for i in enumerate(key)], key=lambda x: x[1])]
 
 
+letter_to_index = dict(zip(ALPHABET, range(len(ALPHABET))))
+index_to_letter = dict(zip(range(len(ALPHABET)), ALPHABET))
+
+
+class Hill:
+    @staticmethod
+    def matrix_mod_inv(matrix, modulus):
+        det = int(np.round(np.linalg.det(matrix)))
+        det_inv = egcd(det, modulus)[1] % modulus
+        matrix_modulus_inv = (
+                det_inv * np.round(det * np.linalg.inv(matrix)).astype(int) % modulus)
+        return matrix_modulus_inv
+
+    @staticmethod
+    def encrypt(message, K):
+        encrypted = ""
+        message_in_numbers = []
+
+        for letter in message:
+            message_in_numbers.append(letter_to_index[letter])
+
+        split_P = [
+            message_in_numbers[i: i + int(K.shape[0])]
+            for i in range(0, len(message_in_numbers), int(K.shape[0]))
+        ]
+
+        for P in split_P:
+            P = np.transpose(np.asarray(P))[:, np.newaxis]
+
+            while P.shape[0] != K.shape[0]:
+                P = np.append(P, letter_to_index[" "])[:, np.newaxis]
+
+            numbers = np.dot(K, P) % len_of_alphabet
+            n = numbers.shape[0]
+
+            for idx in range(n):
+                number = int(numbers[idx, 0])
+                encrypted += index_to_letter[number]
+        return encrypted
+
+    @staticmethod
+    def decrypt(cipher, Kinv):
+        decrypted = ""
+        cipher_in_numbers = []
+
+        for letter in cipher:
+            cipher_in_numbers.append(letter_to_index[letter])
+
+        split_C = [
+            cipher_in_numbers[i: i + int(Kinv.shape[0])]
+            for i in range(0, len(cipher_in_numbers), int(Kinv.shape[0]))
+        ]
+
+        for C in split_C:
+            C = np.transpose(np.asarray(C))[:, np.newaxis]
+            numbers = np.dot(Kinv, C) % len_of_alphabet
+            n = numbers.shape[0]
+
+            for idx in range(n):
+                number = int(numbers[idx, 0])
+                decrypted += index_to_letter[number]
+        return decrypted
+
+
 if __name__ == '__main__':
     which_cipher = int(input(
         '1 - Шифр сдвига\n2 - Афинный шифр\n3 - Шифр простой замены\n4 - Шифр Хилла\n5 - Шифр перестановки\n6 - Шифр Виженера\n'))
@@ -208,45 +296,112 @@ if __name__ == '__main__':
 
     if which_cipher == 1 and what_to_do == 1:
         test = read_file('in.txt')
-        c = Caesar.encrypt(test, get_key_cesar('key.txt', ALPHABET))
-        print(c)
+        try:
+            c = Caesar.encrypt(test, get_key_cesar('key.txt', ALPHABET))
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 1 and what_to_do == 2:
         test = read_file('in.txt')
-        c = Caesar.decrypt(test, get_key_cesar('key.txt', ALPHABET))
-        print(c)
+        try:
+            c = Caesar.decrypt(test, get_key_cesar('key.txt', ALPHABET))
+            write_to_file('encrypt.txt', c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
     elif which_cipher == 2 and what_to_do == 1:
         test = read_file('in.txt')
-        c = Affine.encrypt(test, get_key_affine('key.txt', ALPHABET))
-        print(c)
+        try:
+            c = Affine.encrypt(test, get_key_affine('key.txt', ALPHABET))
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 2 and what_to_do == 2:
         test = read_file('in.txt')
-        c = Affine.decrypt(test, get_key_affine('key.txt', ALPHABET))
-        print(c)
+        try:
+            c = Affine.decrypt(test, get_key_affine('key.txt', ALPHABET))
+            write_to_file('encrypt.txt', c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
     elif which_cipher == 3 and what_to_do == 1:
         test = read_file('in.txt')
-        c = Substitution.encrypt(test, get_key_substitution('key.txt'))
-        print(c)
+        try:
+            c = Substitution.encrypt(test, get_key_substitution('key.txt'))
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 3 and what_to_do == 2:
         test = read_file('in.txt')
-        c = Substitution.decrypt(test, get_key_substitution('key.txt'))
-        print(c)
+        try:
+            c = Substitution.decrypt(test, get_key_substitution('key.txt'))
+            write_to_file("encrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
     elif which_cipher == 4 and what_to_do == 1:
-        print('Нихуя нет')
+        test = read_file('in.txt')
+        try:
+            K = get_key_hill('key.txt')
+            c = Hill.encrypt(test, K)
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 4 and what_to_do == 2:
-        print('Нихуя нет')
+        test = read_file('in.txt')
+        try:
+            K = get_key_hill('key.txt')
+            Kinv = Hill.matrix_mod_inv(K, len_of_alphabet)
+            c = Hill.decrypt(test, Kinv)
+            write_to_file("encrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
     elif which_cipher == 5 and what_to_do == 1:
         test = read_file('in.txt')
-        c = ColumnarTransposition.encrypt(test, get_key_columnar('key.txt'))
-        print(c)
+        try:
+            c = ColumnarTransposition.encrypt(test, get_key_columnar('key.txt'))
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 5 and what_to_do == 2:
         test = read_file('in.txt')
-        c = ColumnarTransposition.decrypt(test, get_key_columnar('key.txt'))
-        print(c)
+        try:
+            c = ColumnarTransposition.decrypt(test, get_key_columnar('key.txt'))
+            write_to_file("encrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
     elif which_cipher == 6 and what_to_do == 1:
         test = read_file('in.txt')
-        c = Vigenere.encrypt(test, get_key_vigenere('key.txt'))
-        print(c)
+        try:
+            c = Vigenere.encrypt(test, get_key_vigenere('key.txt'))
+            write_to_file("decrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле decrypt.txt!')
     elif which_cipher == 6 and what_to_do == 2:
         test = read_file('in.txt')
-        c = Vigenere.decrypt(test, get_key_vigenere('key.txt'))
-        print(c)
+        try:
+            c = Vigenere.decrypt(test, get_key_vigenere('key.txt'))
+            write_to_file("encrypt.txt", c)
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
+            sys.exit()
+        print('Ответ в файле encrypt.txt!')
