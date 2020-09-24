@@ -315,7 +315,7 @@ if __name__ == '__main__':
             c = Caesar.encrypt(test, get_key_cesar('key.txt', ALPHABET))
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 1 and what_to_do == 2:
@@ -324,7 +324,7 @@ if __name__ == '__main__':
             c = Caesar.decrypt(test, get_key_cesar('key.txt', ALPHABET))
             write_to_file('encrypt.txt', c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
     elif which_cipher == 2 and what_to_do == 1:
@@ -333,7 +333,7 @@ if __name__ == '__main__':
             c = Affine.encrypt(test, get_key_affine('key.txt', ALPHABET))
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 2 and what_to_do == 2:
@@ -342,7 +342,7 @@ if __name__ == '__main__':
             c = Affine.decrypt(test, get_key_affine('key.txt', ALPHABET))
             write_to_file('encrypt.txt', c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
     elif which_cipher == 3 and what_to_do == 1:
@@ -351,7 +351,7 @@ if __name__ == '__main__':
             c = Substitution.encrypt(test, get_key_substitution('key.txt'))
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 3 and what_to_do == 2:
@@ -360,7 +360,7 @@ if __name__ == '__main__':
             c = Substitution.decrypt(test, get_key_substitution('key.txt'))
             write_to_file("encrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
     elif which_cipher == 4 and what_to_do == 1:
@@ -371,7 +371,7 @@ if __name__ == '__main__':
             c = Hill.encrypt(test, K)
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 4 and what_to_do == 2:
@@ -383,7 +383,7 @@ if __name__ == '__main__':
             c = Hill.decrypt(test, Kinv)
             write_to_file("encrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
     elif which_cipher == 5 and what_to_do == 1:
@@ -392,7 +392,7 @@ if __name__ == '__main__':
             c = ColumnarTransposition.encrypt(test, get_key_columnar('key.txt'))
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 5 and what_to_do == 2:
@@ -401,7 +401,7 @@ if __name__ == '__main__':
             c = ColumnarTransposition.decrypt(test, get_key_columnar('key.txt'))
             write_to_file("encrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
     elif which_cipher == 6 and what_to_do == 1:
@@ -410,7 +410,7 @@ if __name__ == '__main__':
             c = Vigenere.encrypt(test, get_key_vigenere('key.txt'))
             write_to_file("decrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле decrypt.txt!')
     elif which_cipher == 6 and what_to_do == 2:
