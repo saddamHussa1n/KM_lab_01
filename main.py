@@ -1,7 +1,7 @@
 import sys
 import traceback
 import numpy as np
-from egcd import egcd
+import math
 
 
 def write_to_file(file, string1):
@@ -21,7 +21,6 @@ def read_file(file):
         sys.exit()
     f.close()
     return message
-
 
 def get_alphabet(file):
     f = open(file, mode='r')
@@ -192,10 +191,16 @@ class Affine:
 
     @staticmethod
     def encrypt(message, key):
+        if math.gcd(key[0], len_of_alphabet) != 1:
+            print('Индекс первой буквы ключа должен быть взаимнопростым с длинной алфавита')
+            sys.exit()
         return ''.join(ALPHABET[(ALPHABET.index(ch) * key[0] + key[1]) % len_of_alphabet] for ch in message)
 
     @staticmethod
     def decrypt(ciphertext, key):
+        if math.gcd(key[0], len_of_alphabet) != 1:
+            print('Индекс первой буквы ключа должен быть взаимнопростым с длинной алфавита')
+            sys.exit()
         try:
             return ''.join(
                 ALPHABET[Affine.modReverse(key[0], len_of_alphabet) * (ALPHABET.index(ch) - key[1]) % len_of_alphabet]
@@ -230,9 +235,19 @@ index_to_letter = dict(zip(range(len(ALPHABET)), ALPHABET))
 
 class Hill:
     @staticmethod
+    def work_condition(matrix, modulus):
+        det = int(np.round(np.linalg.det(matrix)))
+        if math.gcd(det, modulus) != 1:
+            print("Детерминант должен быть взаимнопростым с длинной алфавита")
+            sys.exit()
+        else:
+            pass
+
+
+    @staticmethod
     def matrix_mod_inv(matrix, modulus):
         det = int(np.round(np.linalg.det(matrix)))
-        det_inv = egcd(det, modulus)[1] % modulus
+        det_inv = Affine.modReverse(det,modulus)
         matrix_modulus_inv = (
                 det_inv * np.round(det * np.linalg.inv(matrix)).astype(int) % modulus)
         return matrix_modulus_inv
@@ -352,6 +367,7 @@ if __name__ == '__main__':
         test = read_file('in.txt')
         try:
             K = get_key_hill('key.txt')
+            Hill.work_condition(K,len_of_alphabet)
             c = Hill.encrypt(test, K)
             write_to_file("decrypt.txt", c)
         except Exception as e:
@@ -362,6 +378,7 @@ if __name__ == '__main__':
         test = read_file('in.txt')
         try:
             K = get_key_hill('key.txt')
+            Hill.work_condition(K, len_of_alphabet)
             Kinv = Hill.matrix_mod_inv(K, len_of_alphabet)
             c = Hill.decrypt(test, Kinv)
             write_to_file("encrypt.txt", c)
@@ -402,6 +419,6 @@ if __name__ == '__main__':
             c = Vigenere.decrypt(test, get_key_vigenere('key.txt'))
             write_to_file("encrypt.txt", c)
         except Exception as e:
-            print('Ошибка:\n', traceback.format_exc())
+            print('Ошибка:\n', traceback.format_exc().splitlines()[-1])
             sys.exit()
         print('Ответ в файле encrypt.txt!')
