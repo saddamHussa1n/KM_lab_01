@@ -271,7 +271,10 @@ class Hill:
             while P.shape[0] != K.shape[0]:
                 P = np.append(P, letter_to_index[" "])[:, np.newaxis]
 
-            numbers = np.dot(K, P) % len_of_alphabet
+            P = np.transpose(np.asarray(P))
+
+            numbers = np.dot(P, K) % len_of_alphabet
+            numbers = np.transpose(numbers)
             n = numbers.shape[0]
 
             for idx in range(n):
@@ -293,8 +296,8 @@ class Hill:
         ]
 
         for C in split_C:
-            C = np.transpose(np.asarray(C))[:, np.newaxis]
-            numbers = np.dot(Kinv, C) % len_of_alphabet
+            numbers = np.dot(C, Kinv) % len_of_alphabet
+            numbers = np.transpose(numbers)
             n = numbers.shape[0]
 
             for idx in range(n):
